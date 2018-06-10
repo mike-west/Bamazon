@@ -17,6 +17,7 @@
   },
   "homepage": "https://github.com/mike-west/Bamazon#readme",
   "dependencies": {
+    "dotenv": "^6.0.0",
     "inquirer": "^6.0.0",
     "mysql": "^2.15.0",
     "sqlstring": "^2.3.1"
