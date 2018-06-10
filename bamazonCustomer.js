@@ -1,13 +1,38 @@
 var loaded = require("dotenv").config();
 var mysql = require("mysql");
+var table = require("table");
+var format_currency = require("format-currency");
+var numeral = require("numeral");
 var keys = require('./keys');
 
 var connection = mysql.createConnection({
-    host: 'localhost',
-    user: 'root',
-    password: 'm7i8k8e3',
+    host: keys.mysql.MYSQL_HOST,
+    user: keys.mysql.MYSQL_USER_ID,
+    password: keys.mysql.MYSQL_PASSWORD,
     database: 'bamazon'
 });
+
+var displayRows = function(rowArr) {
+    var curr_opts = { format: '%s%v', symbol: '$'};
+    var config = {
+        columns: {
+            3: {"alignment": "right"},
+            4: {"alignment": "right"}
+        }
+    };
+    var rows = [];
+    var headings = ["Item Id", "Product", "Department", "Price", "In Stock"];
+    rows.push(headings);
+    rowArr.forEach(element => {
+        var data = [element.item_id, element.product_name, element.department_name, 
+            format_currency(element.price, curr_opts), 
+            numeral(element.stock_quantity).format('0,0')];
+        rows.push(data);
+    });
+    var output = table.table(rows, config);
+    console.log(output);
+};
+
 
 connection.connect(function (err) {
     if (err) {
@@ -18,9 +43,12 @@ connection.connect(function (err) {
     console.log('connected as id ' + connection.threadId);
     connection.query("SELECT * FROM products", function (error, results, fields) {
         if (error) { throw error; }
-        console.log(results);
+        // console.log(results);
+        displayRows(results);
         connection.end(function (err) {
-            console.log(err);
+            if (err) {
+                console.log(err);
+            }
         });
     })
 });
