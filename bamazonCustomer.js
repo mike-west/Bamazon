@@ -12,12 +12,22 @@ var mysqlConfig = {
     database: 'bamazon'
 };
 
+var updateQty = function(item, newQty) {
+    var query = "UPDATE products SET stock_quantity=" + newQty + " WHERE item_id=" + item;
+    // console.log(query);
+    connection = mysql.createConnection(mysqlConfig);
+    connection.query(query), function (error, results, fields) {
+        if(error) { throw error; }
+        // console.log(results);
+    }
+};
+
 var purchaseInq = function (rowArr) {
     // console.log("Do you want to buy somethng?");
     var choices = [];
     rowArr.forEach(element => {
         choices.push(element.item_id + " " + element.product_name);
-    });
+    })
     inquirer
         .prompt([
             {
@@ -42,17 +52,22 @@ var purchaseInq = function (rowArr) {
 
                 var qty = parseInt(inqResponse.qty);
                 var price = results[0].price;
+                var inStock = parseInt(results[0].stock_quantity);
 
-                if (qty > parseInt(results[0].stock_quantity)) {
+                if (qty > inStock) {
                     console.log("Insufficient quantity!");
                 } else {
                     // console.log(qty, price);
                     cost = qty * price;
-                    console.log("Your order amount is $" + numeral(cost).format('0,0.00'));
+                    console.log("You will be billed for $" + numeral(cost).format('0,0.00'));
+                    var newQty = inStock - qty;
+                    updateQty(ix, newQty);
+                    console.log('back from updateQty');
                 }
-            }
-            )
+            })
+            console.log('back from connection.query in purchaseInq');
         })
+        console.log('back from inquiry in purchaseInq');
 };
 
 var displayRows = function (rowArr) {
@@ -85,13 +100,9 @@ var queryProduct = function () {
         // console.log(results);
         displayRows(results);
         purchaseInq(results);
-        connection.end(function (err) {
-            if (err) {
-                console.log(err);
-            }
-            // console.log("connection end");
-        })
+        console.log('back from purchaseInq');
     });
+    console.log('back from connection.query in queryProduce');
 };
 
 queryProduct();
