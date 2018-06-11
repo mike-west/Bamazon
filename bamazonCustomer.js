@@ -30,6 +30,9 @@ var purchaseInq = function(rowArr) {
         ])
     .then(function(inqResponse) {
         console.log(inqResponse);
+        let item = inqResponse.item;
+        let ix = item.substr(0,item.indexOf(' '));
+        console.log(ix);
     });
 
 }
@@ -64,7 +67,7 @@ connection.connect(function (err) {
         return;
     }
 
-    console.log('connected as id ' + connection.threadId);
+    // console.log('connected as id ' + connection.threadId);
     connection.query("SELECT * FROM products", function (error, results, fields) {
         if (error) { throw error; }
         // console.log(results);
