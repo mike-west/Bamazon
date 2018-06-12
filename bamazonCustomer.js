@@ -18,7 +18,7 @@ var updateQty = function(item, newQty) {
     connection = mysql.createConnection(mysqlConfig);
     connection.query(query), function (error, results, fields) {
         if(error) { throw error; }
-        // console.log(results);
+        connection.end();
     }
 };
 
@@ -49,6 +49,7 @@ var purchaseInq = function (rowArr) {
             connection = mysql.createConnection(mysqlConfig);
             connection.query("SELECT * FROM products where item_id = " + ix, function (error, results, fields) {
                 if (error) { throw error; }
+                connection.end();
 
                 var qty = parseInt(inqResponse.qty);
                 var price = results[0].price;
@@ -64,10 +65,9 @@ var purchaseInq = function (rowArr) {
                     updateQty(ix, newQty);
                     console.log('back from updateQty');
                 }
-            })
-            console.log('back from connection.query in purchaseInq');
-        })
-        console.log('back from inquiry in purchaseInq');
+            });
+            console.log("Out of query in purchaseInq");
+        });
 };
 
 var displayRows = function (rowArr) {
@@ -97,12 +97,12 @@ var queryProduct = function () {
     var connection = mysql.createConnection(mysqlConfig);
     connection.query("SELECT * FROM products", function (error, results, fields) {
         if (error) { throw error; }
+        connection.end();
         // console.log(results);
         displayRows(results);
         purchaseInq(results);
         console.log('back from purchaseInq');
     });
-    console.log('back from connection.query in queryProduce');
 };
 
 queryProduct();
