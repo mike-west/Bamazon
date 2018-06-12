@@ -5,24 +5,55 @@ var format_currency = require("format-currency");
 var numeral = require("numeral");
 var inquirer = require('inquirer');
 var keys = require('./keys');
-var mysqlConfig = {
+
+var connection = mysql.createConnection({
     host: keys.mysql.MYSQL_HOST,
     user: keys.mysql.MYSQL_USER_ID,
     password: keys.mysql.MYSQL_PASSWORD,
-    database: 'bamazon'
+    database: keys.mysql.MYSQL_DB,
+    port: keys.mysql.MYSQL_PORT
+});
+
+connection.connect(function (err) {
+    if (err) throw err;
+    queryProduct();
+});
+
+function queryProduct() {
+    connection.query("SELECT * FROM products", function (error, results, fields) {
+        if (error) { throw error; };
+        // console.log(results);
+        displayRows(results);
+    });
 };
 
-var updateQty = function(item, newQty) {
-    var query = "UPDATE products SET stock_quantity=" + newQty + " WHERE item_id=" + item;
-    // console.log(query);
-    connection = mysql.createConnection(mysqlConfig);
-    connection.query(query), function (error, results, fields) {
-        if(error) { throw error; }
-        connection.end();
-    }
+function displayRows(rowArr) {
+    var curr_opts = { format: '%s%v', symbol: '$' };
+    var config = {
+        columns: {
+            3: { "alignment": "right" },
+            4: { "alignment": "right" }
+        }
+    };
+    var rows = [];
+    var headings = ["Item Id", "Product", "Department", "Price", "In Stock"];
+    rows.push(headings);
+    rowArr.forEach(element => {
+        var data = [element.item_id, element.product_name, element.department_name,
+        format_currency(element.price, curr_opts),
+        (element.stock_quantity > 0)
+            ? numeral(element.stock_quantity).format('0,0')
+            : "out of stock"];
+        rows.push(data);
+    });
+    var output = table.table(rows, config);
+    // diplays product info on database
+    console.log(output);
+    purchaseInq(rowArr);
 };
 
-var purchaseInq = function (rowArr) {
+
+function purchaseInq(rowArr) {
     // console.log("Do you want to buy somethng?");
     var choices = [];
     rowArr.forEach(element => {
@@ -46,10 +77,8 @@ var purchaseInq = function (rowArr) {
             let item = inqResponse.item;
             let ix = item.substr(0, item.indexOf(' '));
 
-            connection = mysql.createConnection(mysqlConfig);
             connection.query("SELECT * FROM products where item_id = " + ix, function (error, results, fields) {
                 if (error) { throw error; }
-                connection.end();
 
                 var qty = parseInt(inqResponse.qty);
                 var price = results[0].price;
@@ -63,46 +92,15 @@ var purchaseInq = function (rowArr) {
                     console.log("You will be billed for $" + numeral(cost).format('0,0.00'));
                     var newQty = inStock - qty;
                     updateQty(ix, newQty);
-                    console.log('back from updateQty');
                 }
             });
-            console.log("Out of query in purchaseInq");
         });
 };
 
-var displayRows = function (rowArr) {
-    var curr_opts = { format: '%s%v', symbol: '$' };
-    var config = {
-        columns: {
-            3: { "alignment": "right" },
-            4: { "alignment": "right" }
-        }
-    };
-    var rows = [];
-    var headings = ["Item Id", "Product", "Department", "Price", "In Stock"];
-    rows.push(headings);
-    rowArr.forEach(element => {
-        var data = [element.item_id, element.product_name, element.department_name,
-        format_currency(element.price, curr_opts),
-        (element.stock_quantity > 0)
-            ? numeral(element.stock_quantity).format('0,0')
-            : "out of stock"];
-        rows.push(data);
-    });
-    var output = table.table(rows, config);
-    console.log(output);
-};
-
-var queryProduct = function () {
-    var connection = mysql.createConnection(mysqlConfig);
-    connection.query("SELECT * FROM products", function (error, results, fields) {
+function updateQty(item, newQty) {
+    var query = "UPDATE products SET stock_quantity=" + newQty + " WHERE item_id=" + item;
+    connection.query(query), function (error, results, fields) {
         if (error) { throw error; }
-        connection.end();
-        // console.log(results);
-        displayRows(results);
-        purchaseInq(results);
-        console.log('back from purchaseInq');
-    });
+    }
+    connection.end();
 };
-
-queryProduct();
