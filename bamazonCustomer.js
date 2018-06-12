@@ -86,6 +86,7 @@ function purchaseInq(rowArr) {
 
                 if (qty > inStock) {
                     console.log("Insufficient quantity!");
+                    connection.end();
                 } else {
                     // console.log(qty, price);
                     cost = qty * price;
